@@ -1,18 +1,15 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-
-// Контексты
 import { AuthProvider } from './context/AuthContext';
 import { RecipesProvider } from './context/RecipesContext';
 import { ShoppingProvider } from './context/ShoppingContext';
 
-// Страницы
 import AuthPage from './components/pages/AuthPage';
 import RecipesPage from './components/pages/RecipesPage';
+import StockPage from './components/pages/StockPage';
 import MenuPlanner from './components/pages/MenuPlanner';
+import SuggestPage from './components/pages/SuggestPage';
 import ShoppingList from './components/pages/ShoppingList';
-
-// Защита маршрутов
-import PrivateRoute from './components/auth/PrivateRoute';
+import PrivateRoute from './components/layout/PrivateRoute';
 
 export default function App() {
   return (
@@ -21,41 +18,14 @@ export default function App() {
         <ShoppingProvider>
           <BrowserRouter>
             <Routes>
-              {/* редирект с корня на каталог */}
               <Route path="/" element={<Navigate to="/recipes" replace />} />
-
-              {/* авторизация */}
               <Route path="/auth" element={<AuthPage />} />
 
-              {/* каталог рецептов */}
-              <Route
-                path="/recipes"
-                element={
-                  <PrivateRoute>
-                    <RecipesPage />
-                  </PrivateRoute>
-                }
-              />
-
-              {/* планировщик меню */}
-              <Route
-                path="/menu"
-                element={
-                  <PrivateRoute>
-                    <MenuPlanner />
-                  </PrivateRoute>
-                }
-              />
-
-              {/* список покупок */}
-              <Route
-                path="/shopping"
-                element={
-                  <PrivateRoute>
-                    <ShoppingList />
-                  </PrivateRoute>
-                }
-              />
+              <Route path="/recipes" element={<PrivateRoute><RecipesPage /></PrivateRoute>} />
+              <Route path="/stock" element={<PrivateRoute><StockPage /></PrivateRoute>} />
+              <Route path="/menu" element={<PrivateRoute><MenuPlanner /></PrivateRoute>} />
+              <Route path="/suggest" element={<PrivateRoute><SuggestPage /></PrivateRoute>} />
+              <Route path="/shopping" element={<PrivateRoute><ShoppingList /></PrivateRoute>} />
             </Routes>
           </BrowserRouter>
         </ShoppingProvider>

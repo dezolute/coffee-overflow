@@ -1,98 +1,73 @@
-import { createContext, useState } from 'react';
+import { createContext, useEffect, useState } from 'react';
 
 export const ShoppingContext = createContext();
 
+/*
+  Структуры:
+  - stock: [{ id, name, quantity, unit }]
+  - menuPlan: [{ id, recipeId, date, mealType, portions }]
+  - shoppingItems: вычисляемые из menuPlan + recipes с учетом stock
+*/
+
 export function ShoppingProvider({ children }) {
-  const [shoppingItems, setShoppingItems] = useState([]);
+  const [stock, setStock] = useState([]);
+  const [menuPlan, setMenuPlan] = useState([]);
   const [checkedItems, setCheckedItems] = useState([]);
 
-  // Парсинг ингредиентов из текста рецепта
-  // Ожидаемый формат строк: "Помидоры — 3 шт" или "Молоко — 1 л"
-  const addIngredients = (ingredientsText) => {
-    if (!ingredientsText) return;
+  useEffect(() => {
+    const s = localStorage.getItem('stock');
+    const m = localStorage.getItem('menuPlan');
+    const c = localStorage.getItem('checkedItems');
+    if (s) setStock(JSON.parse(s));
+    if (m) setMenuPlan(JSON.parse(m));
+    if (c) setCheckedItems(JSON.parse(c));
+  }, []);
 
-    const lines = ingredientsText
-      .split('\n')
-      .map(l => l.trim())
-      .filter(Boolean);
+  useEffect(() => localStorage.setItem('stock', JSON.stringify(stock)), [stock]);
+  useEffect(() => localStorage.setItem('menuPlan', JSON.stringify(menuPlan)), [menuPlan]);
+  useEffect(() => localStorage.setItem('checkedItems', JSON.stringify(checkedItems)), [checkedItems]);
 
-    const newItems = lines.map((line, index) => {
-      // Разделитель — длинное тире (em dash). Если у тебя дефисы, замени на '-'
-      const [namePart, restPart] = line.split('—').map(s => s?.trim());
-      const name = namePart || line;
-
-      let quantity = 1;
-      let unit = 'шт';
-
-      if (restPart) {
-        const tokens = restPart.split(' ').filter(Boolean);
-        // Первый токен пытаемся распарсить как число
-        const q = Number(tokens[0]);
-        if (!Number.isNaN(q)) {
-          quantity = q;
-          unit = tokens.slice(1).join(' ').trim() || unit;
-        } else {
-          // Если не число, считаем, что указана только единица измерения
-          unit = restPart;
-        }
-      }
-
-      return {
-        id: Date.now() + index,
-        name,
-        quantity,
-        unit,
-      };
-    });
-
-    // Мержим одинаковые продукты: суммируем количество по названию и единице
-    setShoppingItems(prev => {
-      const map = new Map();
-
-      const all = [...prev, ...newItems];
-      for (const item of all) {
-        const key = `${item.name}__${item.unit}`.toLowerCase();
-        const existing = map.get(key);
-        if (existing) {
-          map.set(key, {
-            ...existing,
-            quantity: Number(existing.quantity) + Number(item.quantity),
-          });
-        } else {
-          map.set(key, { ...item });
-        }
-      }
-
-      return Array.from(map.values());
-    });
+  const addStockItem = (item) => {
+    setStock(prev => mergeByNameUnit([...prev, { ...item, id: Date.now() }]));
   };
+  const removeStockItem = (id) => setStock(prev => prev.filter(i => i.id !== id));
+  const clearStock = () => setStock([]);
 
-  const toggleChecked = (id) => {
+  const addMenuEntry = (entry) => {
+    setMenuPlan(prev => [...prev, { ...entry, id: Date.now() }]);
+  };
+  const removeMenuEntry = (id) => setMenuPlan(prev => prev.filter(e => e.id !== id));
+
+  const toggleChecked = (key) => {
     setCheckedItems(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
     );
   };
-
   const clearChecked = () => setCheckedItems([]);
 
-  const clearList = () => {
-    setShoppingItems([]);
-    setCheckedItems([]);
+  function mergeByNameUnit(items) {
+    const map = new Map();
+    for (const it of items) {
+      const key = `${it.name}__${(it.unit || '').toLowerCase()}`;
+      if (!map.has(key)) map.set(key, { ...it });
+      else map.set(key, { ...map.get(key), quantity: Number(map.get(key).quantity) + Number(it.quantity) });
+    }
+    return Array.from(map.values()).map((v, idx) => ({ ...v, id: v.id || Date.now() + idx }));
+  }
+
+  const value = {
+    stock,
+    addStockItem,
+    removeStockItem,
+    clearStock,
+    menuPlan,
+    addMenuEntry,
+    removeMenuEntry,
+    checkedItems,
+    toggleChecked,
+    clearChecked,
+    mergeByNameUnit,
   };
 
-  return (
-    <ShoppingContext.Provider
-      value={{
-        shoppingItems,
-        checkedItems,
-        setShoppingItems,
-        addIngredients,
-        toggleChecked,
-        clearChecked,
-        clearList,
-      }}
-    >
-      {children}
-    </ShoppingContext.Provider>
-  );
+  return <ShoppingContext.Provider value={value}>{children}</ShoppingContext.Provider>;
 }
