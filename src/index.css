@@ -1,13 +1,35 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base theme */
+:root {
+  --brand-bg: #f7f9fc;
+  --brand-primary: #1f2937; /* slate-800 */
+  --brand-accent: #6366f1;  /* indigo-500 */
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply antialiased bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 text-slate-800;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Inter, "Helvetica Neue", Arial;
+}
+
+/* Harmonize AntD Tags to app typography */
+.ant-tag {
+  font-family: inherit;
+  font-size: 0.875rem; /* text-sm */
+}
+
+/* Card polish */
+.ant-card {
+  border-radius: 1rem;
+}
+
+/* Modal polish */
+.ant-modal .ant-modal-content {
+  border-radius: 1rem;
 }
